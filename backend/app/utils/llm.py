@@ -15,7 +15,7 @@ class ClaudeClient:
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable not set")
         self.client = Anthropic(api_key=api_key)
-        self.model = "claude-3-5-sonnet-20241022"
+        self.model = "claude-sonnet-4-20250514"
 
     async def generate(
         self,
