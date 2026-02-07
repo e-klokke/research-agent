@@ -239,6 +239,128 @@ async def get_research_result(research_id: str):
     )
 
 
+@app.get("/api/research/history")
+async def get_research_history(limit: int = 10):
+    """
+    Get research history
+
+    Args:
+        limit: Maximum number of results to return
+
+    Returns:
+        List of completed research tasks
+    """
+    try:
+        # Get completed research tasks
+        completed = [
+            {
+                "research_id": rid,
+                "query": state["query"],
+                "domain": state["domain"],
+                "depth": state["depth"],
+                "completed": state["current_stage"] == "completed",
+                "confidence_score": state.get("confidence_score", 0),
+            }
+            for rid, state in research_tasks.items()
+            if state["current_stage"] in ["completed", "failed"]
+        ]
+
+        # Sort by most recent (research_id is UUID which is time-sortable)
+        completed.sort(key=lambda x: x["research_id"], reverse=True)
+
+        return {"history": completed[:limit], "total": len(completed)}
+
+    except Exception as e:
+        logger.error(f"Error getting history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/research/export/{research_id}")
+async def export_research(research_id: str, format: str = "json"):
+    """
+    Export research result in various formats
+
+    Args:
+        research_id: Research task ID
+        format: Export format (json, markdown)
+
+    Returns:
+        Exported research data
+    """
+    if research_id not in research_tasks:
+        raise HTTPException(status_code=404, detail="Research task not found")
+
+    state = research_tasks[research_id]
+
+    if state["current_stage"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Research not completed yet. Current stage: {state['current_stage']}"
+        )
+
+    try:
+        if format == "json":
+            # Export as JSON
+            return {
+                "research_id": research_id,
+                "query": state["query"],
+                "domain": state["domain"],
+                "depth": state["depth"],
+                "report": state["final_report"],
+                "sources": [
+                    {
+                        "url": source.url,
+                        "title": source.title,
+                        "content": source.content[:500],
+                        "type": source.source_type,
+                        "credibility": source.credibility_score,
+                    }
+                    for source in state["sources"]
+                ],
+                "confidence_score": state["confidence_score"],
+                "metadata": {
+                    "iterations": state["iteration_count"],
+                    "total_sources": len(state["sources"]),
+                    "quality_score": state.get("quality_score", 0),
+                }
+            }
+
+        elif format == "markdown":
+            # Export as Markdown
+            md = f"# Research Report\n\n"
+            md += f"**Query:** {state['query']}\n\n"
+            md += f"**Domain:** {state['domain']}\n\n"
+            md += f"**Confidence:** {state['confidence_score']:.2f}/1.0\n\n"
+            md += f"---\n\n"
+            md += state["final_report"]
+            return {"content": md, "format": "markdown"}
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+    except Exception as e:
+        logger.error(f"Error exporting research: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/research/{research_id}")
+async def delete_research(research_id: str):
+    """
+    Delete a research task from history
+
+    Args:
+        research_id: Research task ID
+
+    Returns:
+        Success message
+    """
+    if research_id not in research_tasks:
+        raise HTTPException(status_code=404, detail="Research task not found")
+
+    del research_tasks[research_id]
+    return {"message": "Research deleted successfully"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

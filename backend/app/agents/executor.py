@@ -6,6 +6,8 @@ from typing import List, Dict
 from app.agents.state import ResearchState, Source, SubTask
 from app.workers.web_search import WebSearchWorker
 from app.workers.github import GitHubWorker
+from app.workers.finance import FinanceWorker
+from app.workers.news import NewsWorker
 from app.domains.config import get_domain_config
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,8 @@ class Executor:
         self.workers: Dict[str, any] = {
             "web_search": WebSearchWorker(),
             "github": GitHubWorker(),
+            "finance": FinanceWorker(),
+            "news": NewsWorker(),
         }
 
     async def execute_task(self, task: SubTask, query: str) -> List[Source]:
