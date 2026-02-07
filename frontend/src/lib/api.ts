@@ -122,3 +122,56 @@ export async function pollResearchCompletion(
 
   throw new Error('Research timeout');
 }
+
+export interface HistoryItem {
+  research_id: string;
+  query: string;
+  domain: string;
+  depth: string;
+  completed: boolean;
+  confidence_score: number;
+}
+
+export interface HistoryResponse {
+  history: HistoryItem[];
+  total: number;
+}
+
+/**
+ * Get research history
+ */
+export async function getResearchHistory(limit: number = 10): Promise<HistoryResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/research/history?limit=${limit}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to get research history: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Export research result
+ */
+export async function exportResearch(researchId: string, format: 'json' | 'markdown' = 'json'): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/api/research/export/${researchId}?format=${format}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to export research: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete research from history
+ */
+export async function deleteResearch(researchId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/research/${researchId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete research: ${response.statusText}`);
+  }
+}

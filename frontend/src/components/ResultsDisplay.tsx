@@ -1,42 +1,88 @@
 'use client';
 
-import { ResearchResult } from '@/lib/api';
+import { useState } from 'react';
+import { ResearchResult, exportResearch } from '@/lib/api';
 
 interface ResultsDisplayProps {
   result: ResearchResult | null;
 }
 
 export default function ResultsDisplay({ result }: ResultsDisplayProps) {
+  const [exporting, setExporting] = useState(false);
+
   if (!result) return null;
+
+  const handleExport = async (format: 'json' | 'markdown') => {
+    try {
+      setExporting(true);
+      const data = await exportResearch(result.research_id, format);
+
+      // Download the file
+      const blob = new Blob(
+        [format === 'json' ? JSON.stringify(data, null, 2) : data.content],
+        { type: format === 'json' ? 'application/json' : 'text/markdown' }
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `research-${result.research_id.slice(0, 8)}.${format === 'json' ? 'json' : 'md'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export research');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="flex justify-between items-start mb-4">
-          <div>
+          <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Research Report
             </h2>
             <p className="text-gray-600">{result.query}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right ml-4">
             <div className="text-sm text-gray-500">Confidence</div>
             <div className="text-2xl font-bold text-blue-600">
               {(result.confidence_score * 10).toFixed(1)}/10
             </div>
           </div>
         </div>
-        <div className="flex gap-4 text-sm text-gray-600">
-          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
-            {result.domain}
-          </span>
-          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-            {result.depth}
-          </span>
-          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-            {result.sources.length} sources
-          </span>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-4 text-sm text-gray-600">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+              {result.domain}
+            </span>
+            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+              {result.depth}
+            </span>
+            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+              {result.sources.length} sources
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleExport('json')}
+              disabled={exporting}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={() => handleExport('markdown')}
+              disabled={exporting}
+              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+            >
+              Export MD
+            </button>
+          </div>
         </div>
       </div>
 
