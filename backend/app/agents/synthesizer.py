@@ -59,10 +59,29 @@ Important:
 - Provide a confidence score (1-10) based on source quality and consensus
 """
 
-        # Get Claude to synthesize
+        # Get Claude to synthesize with prompt caching
+        # This caches the research_context which is reused in quality checking
         claude = get_claude_client()
-        report = await claude.generate(
-            prompt=prompt,
+        report = await claude.generate_with_sources(
+            prompt=f"""Query: "{query}"
+
+Create a comprehensive research report that:
+1. Directly answers the query
+2. Synthesizes information from all sources
+3. Resolves any contradictions
+4. Provides clear recommendations
+5. Includes proper citations
+6. Assesses confidence level
+
+Use the following structure:
+{domain_config.synthesis_template}
+
+Important:
+- Be specific and actionable
+- Cite sources with [1], [2], etc.
+- Note any uncertainties or conflicting information
+- Provide a confidence score (1-10) based on source quality and consensus""",
+            sources_context=research_context,
             system_prompt=system_prompt,
             max_tokens=4096,
             temperature=0.5

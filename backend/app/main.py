@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 
 from app.models.schemas import (
@@ -21,6 +22,7 @@ from app.models.schemas import (
 from app.agents.state import ResearchState
 from app.agents.graph import get_research_graph
 from app.utils.logging_config import setup_logging
+from app.utils.sse import SSEStream
 
 # Load environment variables
 load_dotenv()
@@ -359,6 +361,30 @@ async def delete_research(research_id: str):
 
     del research_tasks[research_id]
     return {"message": "Research deleted successfully"}
+
+
+@app.get("/api/research/stream/{research_id}")
+async def stream_research_progress(research_id: str):
+    """
+    Stream real-time research progress updates via Server-Sent Events
+
+    Args:
+        research_id: Research task ID
+
+    Returns:
+        StreamingResponse with SSE events
+    """
+    def get_state(rid: str):
+        return research_tasks.get(rid)
+
+    return StreamingResponse(
+        SSEStream.stream_progress(research_id, get_state),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 if __name__ == "__main__":

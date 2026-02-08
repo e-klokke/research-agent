@@ -16,7 +16,7 @@ class DomainConfig:
 # Tech Domain Configuration
 TECH_DOMAIN = DomainConfig(
     name="tech",
-    workers=["web_search", "github", "docs"],
+    workers=["web_search", "github", "docs", "stackoverflow"],
     quality_weights={
         "recency": 0.8,
         "authority": 0.9,

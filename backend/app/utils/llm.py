@@ -1,4 +1,4 @@
-"""LLM utility wrapper for Claude API"""
+"""LLM utility wrapper for Claude API with enhanced prompt caching"""
 import os
 import logging
 from typing import Optional, List, Dict
@@ -21,16 +21,18 @@ class ClaudeClient:
         self,
         prompt: str,
         system_prompt: Optional[str] = None,
+        context: Optional[str] = None,
         max_tokens: int = 4096,
         temperature: float = 0.7,
         use_cache: bool = True
     ) -> str:
         """
-        Generate a response from Claude
+        Generate a response from Claude with prompt caching
 
         Args:
             prompt: The user prompt
-            system_prompt: Optional system prompt
+            system_prompt: Optional system prompt (cached)
+            context: Optional context to cache (e.g., source data)
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
             use_cache: Whether to use prompt caching
@@ -39,7 +41,27 @@ class ClaudeClient:
             Generated text response
         """
         try:
-            messages = [{"role": "user", "content": prompt}]
+            # Build messages with caching
+            if context and use_cache:
+                # Cache large context blocks (like source data)
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": context,
+                                "cache_control": {"type": "ephemeral"}
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            else:
+                messages = [{"role": "user", "content": prompt}]
 
             kwargs = {
                 "model": self.model,
@@ -48,9 +70,9 @@ class ClaudeClient:
                 "messages": messages,
             }
 
+            # Add system prompt with caching
             if system_prompt:
                 if use_cache:
-                    # Use prompt caching for system prompts
                     kwargs["system"] = [
                         {
                             "type": "text",
@@ -61,8 +83,14 @@ class ClaudeClient:
                 else:
                     kwargs["system"] = system_prompt
 
-            logger.info(f"Calling Claude API with {len(prompt)} chars")
+            logger.info(f"Calling Claude API with {len(prompt)} chars (caching: {use_cache})")
             response = self.client.messages.create(**kwargs)
+
+            # Log cache performance
+            usage = response.usage
+            if hasattr(usage, 'cache_creation_input_tokens'):
+                logger.info(f"Cache stats - Created: {usage.cache_creation_input_tokens}, "
+                          f"Read: {getattr(usage, 'cache_read_input_tokens', 0)}")
 
             result = response.content[0].text
             logger.info(f"Received response with {len(result)} chars")
@@ -72,6 +100,39 @@ class ClaudeClient:
         except Exception as e:
             logger.error(f"Error calling Claude API: {e}")
             raise
+
+    async def generate_with_sources(
+        self,
+        prompt: str,
+        sources_context: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7
+    ) -> str:
+        """
+        Generate response with cached source context
+
+        This is optimized for research synthesis where source data
+        is reused across quality checking and synthesis steps.
+
+        Args:
+            prompt: The analysis prompt
+            sources_context: Large source data block to cache
+            system_prompt: System instructions
+            max_tokens: Maximum tokens
+            temperature: Sampling temperature
+
+        Returns:
+            Generated response
+        """
+        return await self.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            context=sources_context,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            use_cache=True
+        )
 
     async def generate_structured(
         self,
