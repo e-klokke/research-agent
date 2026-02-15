@@ -29,7 +29,7 @@ class ResearchState(TypedDict):
     """Main state for the research workflow"""
     # Input
     query: str
-    domain: Literal['tech', 'investing']
+    domain: Literal['tech', 'investing', 'academic']
     depth: Literal['quick', 'standard', 'deep']
 
     # Planning phase

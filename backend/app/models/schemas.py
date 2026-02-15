@@ -7,7 +7,7 @@ from datetime import datetime
 class ResearchRequest(BaseModel):
     """Request to start a new research task"""
     query: str = Field(..., description="The research query", min_length=5)
-    domain: Literal['tech', 'investing'] = Field('tech', description="Research domain")
+    domain: Literal['tech', 'investing', 'academic'] = Field('tech', description="Research domain")
     depth: Literal['quick', 'standard', 'deep'] = Field('standard', description="Research depth")
 
 

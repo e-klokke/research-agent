@@ -16,13 +16,13 @@ class DomainConfig:
 # Tech Domain Configuration
 TECH_DOMAIN = DomainConfig(
     name="tech",
-    workers=["web_search", "github", "docs", "stackoverflow"],
+    workers=["web_search", "github", "docs", "stackoverflow", "reddit", "youtube"],
     quality_weights={
         "recency": 0.8,
         "authority": 0.9,
         "relevance": 0.95,
     },
-    max_sources=25,
+    max_sources=30,
     synthesis_template="""# Technical Research Report
 
 ## Executive Summary
@@ -36,6 +36,9 @@ TECH_DOMAIN = DomainConfig(
 
 ## Implementation Considerations
 {implementation}
+
+## Community Insights
+{community}
 
 ## Security & Risk Analysis
 {risks}
@@ -89,6 +92,50 @@ INVESTING_DOMAIN = DomainConfig(
 )
 
 
+# Academic Domain Configuration
+ACADEMIC_DOMAIN = DomainConfig(
+    name="academic",
+    workers=["academic", "web_search", "docs", "reddit", "stackoverflow"],
+    quality_weights={
+        "authority": 0.95,
+        "citation_count": 0.9,
+        "peer_review": 0.95,
+    },
+    max_sources=30,
+    synthesis_template="""# Academic Research Report
+
+## Abstract
+{abstract}
+
+## Literature Review
+{literature_review}
+
+## Key Papers & Findings
+{key_papers}
+
+## Methodology Analysis
+{methodology}
+
+## Citation Analysis
+{citations}
+
+## Community Discussion
+{community}
+
+## Research Gaps
+{gaps}
+
+## Future Directions
+{future_work}
+
+## Bibliography
+{bibliography}
+
+## Confidence Score: {confidence}/10
+"""
+)
+
+
 # Depth configurations
 DEPTH_CONFIG = {
     "quick": {
@@ -115,5 +162,7 @@ def get_domain_config(domain: str) -> DomainConfig:
         return TECH_DOMAIN
     elif domain == "investing":
         return INVESTING_DOMAIN
+    elif domain == "academic":
+        return ACADEMIC_DOMAIN
     else:
         raise ValueError(f"Unknown domain: {domain}")

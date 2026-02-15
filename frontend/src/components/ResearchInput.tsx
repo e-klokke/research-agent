@@ -3,13 +3,13 @@
 import { useState } from 'react';
 
 interface ResearchInputProps {
-  onSubmit: (query: string, domain: 'tech' | 'investing', depth: 'quick' | 'standard' | 'deep') => void;
+  onSubmit: (query: string, domain: 'tech' | 'investing' | 'academic', depth: 'quick' | 'standard' | 'deep') => void;
   isLoading: boolean;
 }
 
 export default function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
   const [query, setQuery] = useState('');
-  const [domain, setDomain] = useState<'tech' | 'investing'>('tech');
+  const [domain, setDomain] = useState<'tech' | 'investing' | 'academic'>('tech');
   const [depth, setDepth] = useState<'quick' | 'standard' | 'deep'>('standard');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,11 +46,12 @@ export default function ResearchInput({ onSubmit, isLoading }: ResearchInputProp
               id="domain"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={domain}
-              onChange={(e) => setDomain(e.target.value as 'tech' | 'investing')}
+              onChange={(e) => setDomain(e.target.value as 'tech' | 'investing' | 'academic')}
               disabled={isLoading}
             >
               <option value="tech">Technology</option>
               <option value="investing">Investing</option>
+              <option value="academic">Academic Research</option>
             </select>
           </div>
 

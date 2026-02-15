@@ -8,6 +8,12 @@ from app.workers.web_search import WebSearchWorker
 from app.workers.github import GitHubWorker
 from app.workers.finance import FinanceWorker
 from app.workers.news import NewsWorker
+from app.workers.docs import DocsWorker
+from app.workers.stackoverflow import StackOverflowWorker
+from app.workers.academic import AcademicWorker
+from app.workers.reddit import RedditWorker
+from app.workers.youtube import YouTubeWorker
+from app.workers.patent import PatentWorker
 from app.domains.config import get_domain_config
 
 logger = logging.getLogger(__name__)
@@ -22,6 +28,12 @@ class Executor:
             "github": GitHubWorker(),
             "finance": FinanceWorker(),
             "news": NewsWorker(),
+            "docs": DocsWorker(),
+            "stackoverflow": StackOverflowWorker(),
+            "academic": AcademicWorker(),
+            "reddit": RedditWorker(),
+            "youtube": YouTubeWorker(),
+            "patent": PatentWorker(),
         }
 
     async def execute_task(self, task: SubTask, query: str) -> List[Source]:
